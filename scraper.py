@@ -30,7 +30,7 @@ def alert_me(url,name, priceWanted):
     server.starttls()
     server.ehlo()
     
-    server.login('aouataf.djillani@gmail.com','nrekeblekchok94')
+    server.login('aouataf.djillani@gmail.com','MyPassword')
     
     subject = 'Price fell down for '+name   
     body = 'Buy it now here: '+url   
