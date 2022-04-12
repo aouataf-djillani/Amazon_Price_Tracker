@@ -1,8 +1,17 @@
+"""
+
+Updates: the data is being loaded dynamically with JavaScript, presumably from a database / API. 
+Check and use newscraper.py  where we use Selenium to fetch dynamically loaded data.
+"""
+
+
 import requests
 from bs4 import BeautifulSoup
 import time
 import smtplib
-
+import local_settings
+# Having the asin is enough to get to a product ppage on Amazon
+# Extracts it and returns a shorter version of it : eg https://www.amazon.fr/dp/B08QN4KPKW 
 def extract_url(url):
 
     if url.find("www.amazon.fr") != -1:
@@ -21,8 +30,9 @@ def extract_url(url):
         url = None
     return url
 
-headers = { "User-Agent":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:93.0) Gecko/20100101 Firefox/93.0"}
-
+# including the headers to avoid blocked request 
+headers = { "User-Agent":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:99.0) Gecko/20100101 Firefox/99.0"}
+# Sends an email alert once the product reaches the desired price
 def alert_me(url,name, priceWanted):
     server = smtplib.SMTP('smtp.gmail.com',587)
     
@@ -30,7 +40,7 @@ def alert_me(url,name, priceWanted):
     server.starttls()
     server.ehlo()
     
-    server.login('aouataf.djillani@gmail.com','MyPassword')
+    server.login('aouataf.djillani@gmail.com',local_settings.MAIL_PASSWORD)
     
     subject = 'Price fell down for '+name   
     body = 'Buy it now here: '+url   
@@ -39,26 +49,28 @@ def alert_me(url,name, priceWanted):
     server.sendmail('aouataf.djillani@gmail.com','aouatefd@yahoo.com',msg)
     print('Email alert sent')    
     server.quit()
-
-offer=[]
+# Sends a request
+# parses the html page with beautifulsoup 
+# compares the price with the desired price
 def trackPrice(url,priceWanted):
-    
+
     page = requests.get(url, headers=headers)
-    soup = BeautifulSoup(page.content, "html5lib")
+    soup = BeautifulSoup(page.text, "lxml")
     try:
-        name= soup.find(id="productTitle").text.strip()
-        price=float(soup.find(id="price_inside_buybox").text.strip().replace(',','').replace("€",""))
+        name= soup.select(id="productTitle").text.strip()
+        
+        price=float(soup.find('span',attrs={"class":"a-price a-text-price a-size-medium apexPriceToPay"}).text.strip().replace(',','').replace("€",""))
+        print(price)
         if price<=priceWanted:
-            offer.append(f"Great news !! You've got an offer on the {name} for {price}. Check out the product{url}")
             alert_me(url,name, priceWanted)
     except:
-        offer.append("no details found on this product")
+        print("no details found on this product")
     return offer
 
-url="https://www.amazon.fr/%C3%89lectrique-Montagne-Batterie-Engrenages-Kilom%C3%A9trage/dp/B08QN4KPKW/ref=sr_1_2?_encoding=UTF8&c=ts&dchild=1&keywords=V%C3%A9los+%C3%A9lectriques&qid=1634735179&s=sports&sr=1-2&ts_id=485936031"
-#url=extract_url(url)
-while True:
-    print(trackPrice(url, 12999.0))
-    time.sleep(60)
+url="https://www.amazon.com/Acer-Predator-PH315-54-760S-i7-11800H-Keyboard/dp/B092YHJLS6/ref=sr_1_6?crid=F1JXNBNMFGGU&keywords=gamer+laptop&qid=1649613915&s=computers-intl-ship&sprefix=gamer+laptop+%2Ccomputers-intl-ship%2C176&sr=1-6"
+
+print(trackPrice(url, 12999.0))
 
 # to do :Run the program on AWS cloud
+# cron(08**?*) every day at 8 am 
+
