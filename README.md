@@ -25,3 +25,8 @@ pip install -r requirements.txt
 ```bash
 python3 scraper.py
 ```
+## Updates: 
+Code won't work if data from Amazon website is loaded dynamically with JavaScript, presumably from a database / API. 
+Check and use the script from my other repository where I use Selenium to fetch dynamically loaded data.: 
+
+https://github.com/aouataf-djillani/Amazon-price-tracker-selenium.git   
